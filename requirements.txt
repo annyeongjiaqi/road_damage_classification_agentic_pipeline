@@ -1,0 +1,7 @@
+streamlit
+tensorflow
+Pillow
+langchain
+openai
+email-validator
+python-dotenv
