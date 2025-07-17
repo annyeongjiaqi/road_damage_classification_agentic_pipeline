@@ -1,0 +1,19 @@
+version: 0.2
+
+phases:
+  install:
+    runtime-versions:
+      python: 3.10
+    commands:
+      - pip install -r requirements.txt
+  build:
+    commands:
+      - python train_model.py
+      - python -m unittest discover -s tests  # optional test phase
+      - docker build -t road-damage-app .
+  post_build:
+    commands:
+      - echo Build complete
+artifacts:
+  files:
+    - model/damage_classifier.h5
