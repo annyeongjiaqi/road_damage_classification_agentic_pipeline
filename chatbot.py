@@ -1,6 +1,6 @@
 import streamlit as st
 from PIL import Image
-from model import predict_damage
+from cnn_model import predict_damage
 from get_geolocation import get_location
 from llm_agent import generate_email
 from mailer_agent import send_email
