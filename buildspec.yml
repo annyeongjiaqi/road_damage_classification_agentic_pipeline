@@ -1,19 +1,15 @@
 version: 0.2
-
 phases:
   install:
     runtime-versions:
       python: 3.10
     commands:
+      - pip install --upgrade pip
       - pip install -r requirements.txt
   build:
     commands:
-      - python train_model.py
-      - python -m unittest discover -s tests  # optional test phase
-      - docker build -t road-damage-app .
-  post_build:
-    commands:
-      - echo Build complete
+      - echo "Running agentic orchestrator..."
+      - python pipeline_orchestrator.py --build-id $CODEBUILD_BUILD_ID
 artifacts:
   files:
-    - model/damage_classifier.h5
+    - '**/*'
