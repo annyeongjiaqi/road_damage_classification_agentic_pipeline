@@ -12,18 +12,48 @@ jobs:
     steps:
       - name: Checkout GitHub repo
         uses: actions/checkout@v3
+        with:
+          fetch-depth: 0  # Fetch full history
 
       - name: Set Git identity
         run: |
           git config --global user.name "LTA_Intern_Jiaqi_CLI"
           git config --global user.email "intern.jiaqi@lta.gov.sg"
 
+      - name: Validate secrets
+        run: |
+          if [ -z "${{ secrets.CODECOMMIT_USERNAME }}" ]; then
+            echo "Error: CODECOMMIT_USERNAME secret is not set"
+            exit 1
+          fi
+          if [ -z "${{ secrets.CODECOMMIT_PASSWORD }}" ]; then
+            echo "Error: CODECOMMIT_PASSWORD secret is not set"
+            exit 1
+          fi
+          echo "Secrets validation passed"
+
       - name: Set CodeCommit remote with credentials
         run: |
-          git remote add codecommit https://git-codecommit.ap-southeast-1.amazonaws.com/v1/repos/ROAD_DAMAGE_LTA
-          git config --global http.https://git-codecommit.ap-southeast-1.amazonaws.com/.extraheader "AUTHORIZATION: Basic $(echo -n '${{ secrets.CODECOMMIT_USERNAME }}:${{ secrets.CODECOMMIT_PASSWORD }}' | base64)"
-
+          # Remove any existing codecommit remote
+          git remote remove codecommit 2>/dev/null || true
+          
+          # Add CodeCommit remote with embedded credentials
+          git remote add codecommit https://${{ secrets.CODECOMMIT_USERNAME }}:${{ secrets.CODECOMMIT_PASSWORD }}@git-codecommit.ap-southeast-1.amazonaws.com/v1/repos/ROAD_DAMAGE_LTA
+          
+          # Verify remote was added successfully
+          git remote -v
 
       - name: Push to CodeCommit
         run: |
-          git push --force codecommit main
+          # Fetch the complete history to avoid issues
+          git fetch --unshallow || true
+          
+          # Push to CodeCommit with error handling
+          if git push codecommit main --force; then
+            echo "Successfully pushed to CodeCommit"
+          else
+            echo "Failed to push to CodeCommit. Checking remote status..."
+            git remote -v
+            git status
+            exit 1
+          fi
