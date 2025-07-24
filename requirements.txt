@@ -96,3 +96,4 @@ zstandard==0.23.0
 exifread
 geopy
 pandas
+langchain-community
