@@ -95,5 +95,4 @@ wrapt==1.17.2
 zstandard==0.23.0
 exifread
 geopy
-pandas
 langchain-community
