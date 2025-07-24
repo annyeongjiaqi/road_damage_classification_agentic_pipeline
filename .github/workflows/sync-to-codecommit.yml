@@ -37,23 +37,35 @@ jobs:
           # Remove any existing codecommit remote
           git remote remove codecommit 2>/dev/null || true
           
-          # Add CodeCommit remote with embedded credentials
-          git remote add codecommit https://${{ secrets.CODECOMMIT_USERNAME }}:${{ secrets.CODECOMMIT_PASSWORD }}@git-codecommit.ap-southeast-1.amazonaws.com/v1/repos/ROAD_DAMAGE_LTA
+          # URL encode the credentials to handle special characters
+          USERNAME=$(echo -n "${{ secrets.CODECOMMIT_USERNAME }}" | python3 -c "import sys, urllib.parse; print(urllib.parse.quote(sys.stdin.read().strip()))")
+          PASSWORD=$(echo -n "${{ secrets.CODECOMMIT_PASSWORD }}" | python3 -c "import sys, urllib.parse; print(urllib.parse.quote(sys.stdin.read().strip()))")
           
-          # Verify remote was added successfully
-          git remote -v
+          # Add CodeCommit remote with URL-encoded credentials
+          git remote add codecommit "https://${USERNAME}:${PASSWORD}@git-codecommit.ap-southeast-1.amazonaws.com/v1/repos/ROAD_DAMAGE_LTA"
+          
+          # Verify remote was added successfully (without showing credentials)
+          echo "CodeCommit remote added successfully"
 
       - name: Push to CodeCommit
         run: |
-          # Fetch the complete history to avoid issues
-          git fetch --unshallow || true
+          # Check if repository is shallow and only unshallow if needed
+          if [ -f .git/shallow ]; then
+            echo "Repository is shallow, fetching complete history..."
+            git fetch --unshallow
+          else
+            echo "Repository already has complete history"
+          fi
           
           # Push to CodeCommit with error handling
+          echo "Attempting to push to CodeCommit..."
           if git push codecommit main --force; then
             echo "Successfully pushed to CodeCommit"
           else
-            echo "Failed to push to CodeCommit. Checking remote status..."
-            git remote -v
+            echo "Failed to push to CodeCommit. Debugging information:"
+            echo "Git status:"
             git status
+            echo "Checking connectivity to CodeCommit..."
+            curl -I https://git-codecommit.ap-southeast-1.amazonaws.com/ || echo "Could not reach CodeCommit endpoint"
             exit 1
           fi
