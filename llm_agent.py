@@ -1,4 +1,5 @@
 from langchain.agents import Tool
+import os
 def generate_email_body(damage_info: str) -> str:
     # LLM call to format email
     from langchain import OpenAI, PromptTemplate, LLMChain
@@ -9,7 +10,7 @@ def generate_email_body(damage_info: str) -> str:
         {info}
         """
     )
-    chain = LLMChain(llm=OpenAI(temperature=0), prompt=template)
+    chain = LLMChain(llm = OpenAI(temperature=0, openai_api_key=os.getenv("OPENAI_API_KEY")), prompt=template)
     return chain.run(info=damage_info)
 
 class EmailTool(Tool):
