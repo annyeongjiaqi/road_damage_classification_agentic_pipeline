@@ -18,9 +18,11 @@ jobs:
           git config --global user.name "LTA_Intern_Jiaqi_CLI"
           git config --global user.email "intern.jiaqi@lta.gov.sg"
 
-      - name: Add CodeCommit remote with credentials
+      - name: Set CodeCommit remote with credentials
         run: |
-          git remote add codecommit https://${{ secrets.CODECOMMIT_USERNAME }}:${{ secrets.CODECOMMIT_PASSWORD }}@git-codecommit.ap-southeast-1.amazonaws.com/v1/repos/ROAD_DAMAGE_LTA
+          git remote add codecommit https://git-codecommit.ap-southeast-1.amazonaws.com/v1/repos/ROAD_DAMAGE_LTA
+          git config --global http.https://git-codecommit.ap-southeast-1.amazonaws.com/.extraheader "AUTHORIZATION: Basic $(echo -n '${{ secrets.CODECOMMIT_USERNAME }}:${{ secrets.CODECOMMIT_PASSWORD }}' | base64)"
+
 
       - name: Push to CodeCommit
         run: |
