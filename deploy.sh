@@ -1,8 +1,8 @@
 #!/bin/bash
-cd /home/ec2-user/road-damage-app
-docker stop road-damage || true
-docker rm road-damage || true
-docker build -t road-damage .
-docker run -d --name road-damage -p 8501:8501 road-damage
-
-
+set -e
+cd /home/ec2-user/app
+# Rebuild container
+docker-compose down --remove-orphans
+docker-compose up -d --build
+# Notify orchestrator about success
+python pipeline_orchestrator.py --deploy-event success
