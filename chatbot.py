@@ -1,31 +1,50 @@
+from dotenv import load_dotenv
+load_dotenv() 
+
+import os
 import streamlit as st
-from PIL import Image
+from datetime import datetime
+from get_geolocation import GeoLocationTool
+from llm_agent import EmailTool
+from mailer_agent import MailerTool
 from cnn_model import predict_damage
-from get_geolocation import get_location
-from llm_agent import generate_email
-from mailer_agent import send_email
 
-st.set_page_config(page_title="Road Damage Reporter")
-st.title("Road Damage Detection and Reporting")
+st.set_page_config(
+    page_title="Road Damage Detection (Agentic)",
+    page_icon="🛣️",
+)
 
-uploaded_file = st.file_uploader("Upload road image", type=["jpg", "png"])
+st.title("Road Damage Detection (Agentic)")
 
-if uploaded_file:
-    image = Image.open(uploaded_file)
-    st.image(image, caption="Uploaded Image", use_column_width=True)
+# 1. Upload an image
+uploaded_image = st.file_uploader("Upload road image", type=["jpg","jpeg","png"])
 
-    with st.spinner("Analyzing..."):
-        result = predict_damage(image)
-        st.write("Prediction:", result)
+# 2. Process on button click
+if uploaded_image and st.button("Report Damage"):
+    with st.spinner("Processing..."):
+        # Read bytes
+        image_bytes = uploaded_image.getvalue()
+        
+        # a) Classify damage via CNN
+        damage_type = predict_damage(image_bytes)
+        st.write(f"Detected damage: {damage_type}")
 
-        if max(result.values()) > 0.8:
-            damage_type = max(result, key=result.get)
-            severity = result[damage_type]
-            location = get_location()
+        # b) If damage, get location and notify
+        if damage_type.lower() != "no damage":
+            # Geolocation
+            location = GeoLocationTool().run(image_bytes)
 
-            email_body = generate_email(damage_type, severity, location)
-            send_email("authority@example.com", f"Road Damage Alert: {damage_type}", email_body)
+            # Compose report
+            damage_info = (
+                f"Type: {damage_type}; "
+                f"Location: {location}; "
+                f"Time: {datetime.now():%Y-%m-%d %H:%M:%S}"
+            )
 
-            st.success("Report sent to authorities!")
+            # Generate and send email
+            email_body = EmailTool().run(damage_info)
+            MailerTool().run(email_body)
+
+            st.success("Damage report sent to authorities.")
         else:
-            st.info("No significant damage detected.")
+            st.info("No road damage detected.")
